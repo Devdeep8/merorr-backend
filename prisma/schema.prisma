@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Style enum for fashion fits
+enum FitStyle {
+  SKINNY
+  RELAXED
+  OVERSIZED
+  CLASSIC
+}
+
+// Color model for available colors
+model Color {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  hexCode   String?  // Optional hex color code
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  variants ProductVariant[]
+
+  @@map("colors")
+}
+
+// Style model for fashion styles
+model Style {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  fitType   FitStyle
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  variants ProductVariant[]
+
+  @@map("styles")
+}
+
+// Collection model
+model Collection {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products ProductCollection[]
+  variants VariantCollection[]
+
+  @@map("collections")
+}
+
+// Brand model
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  logo      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("brands")
+}
+
+// Product Type model
+model ProductType {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("product_types")
+}
+
+// Main Product model
+model Product {
+  id                    String   @id @default(cuid())
+  numericId             Int      @unique @default(autoincrement())
+  name                  String
+  slug                  String   @unique
+  sku                   String   @unique
+  description           String?
+  price                 Decimal  @db.Decimal(10, 2)
+  discountedPrice       Decimal? @db.Decimal(10, 2)
+  formattedPrice        String?
+  formattedDiscountedPrice String?
+  pricePerUnit          Decimal? @db.Decimal(10, 2)
+  formattedPricePerUnit String?
+  currency              String   @default("USD")
+  quantityInStock       Int      @default(0)
+  inStock               Boolean  @default(true)
+  weight                Decimal? @db.Decimal(8, 3)
+  trackInventory        Boolean  @default(true)
+  manageVariants        Boolean  @default(false)
+  productPageUrl        String?
+  
+  // SEO Data
+  seoTitle              String?
+  seoDescription        String?
+  seoKeywords           String?
+  
+  // Media
+  mainMedia             String?
+  mediaItems            Json?    // Array of media URLs
+  
+  // Additional Info
+  additionalInfoSections Json?   // Flexible JSON for additional sections
+  customTextFields      Json?    // Custom text fields
+  productOptions        Json?    // Product options
+  ribbons               Json?    // Product ribbons/badges
+  discount              Json?    // Discount information
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  inventoryItemUpdatedDate DateTime @updatedAt
+
+  // Relations
+  brandId               String?
+  brand                 Brand?   @relation(fields: [brandId], references: [id])
+  
+  productTypeId         String?
+  productType           ProductType? @relation(fields: [productTypeId], references: [id])
+  
+  variants              ProductVariant[]
+  collections           ProductCollection[]
+
+  @@map("products")
+}
+
+// Product Variant model
+model ProductVariant {
+  id                String   @id @default(cuid())
+  variantId         String   @unique
+  sku               String   @unique
+  fullVariantName   String
+  variantName       String
+  choices           Json?    // Variant choices (size, etc.)
+  stock             Int      @default(0)
+  managedVariant    Boolean  @default(true)
+  variantMedia      Json?    // Array of variant-specific media
+  
+  // Fashion-specific fields
+  colorId           String?
+  color             Color?   @relation(fields: [colorId], references: [id])
+  
+  styleId           String?
+  style             Style?   @relation(fields: [styleId], references: [id])
+  
+  // Relations
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  collections       VariantCollection[]
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("product_variants")
+}
+
+// Junction table for Product-Collection many-to-many
+model ProductCollection {
+  id           String     @id @default(cuid())
+  productId    String
+  collectionId String
+  
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime   @default(now())
+
+  @@unique([productId, collectionId])
+  @@map("product_collections")
+}
+
+// Junction table for Variant-Collection many-to-many
+model VariantCollection {
+  id           String         @id @default(cuid())
+  variantId    String
+  collectionId String
+  
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  collection   Collection     @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime       @default(now())
+
+  @@unique([variantId, collectionId])
+  @@map("variant_collections")
+}

@@ -100,10 +100,10 @@ process.on('SIGTERM', async () => {
 
 const PORT = process.env.PORT || 3000;
 
-// app.listen(PORT, () => {
-//   console.log(`🚀 Fashion Ecommerce API is running on port ${PORT}`);
-//   console.log(`📚 API Documentation: http://localhost:${PORT}/api/${API_VERSION}`);
-//   console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-// });
+app.listen(PORT, () => {
+  console.log(`🚀 Fashion Ecommerce API is running on port ${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api/${API_VERSION}`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+});
 
 module.exports = app;
